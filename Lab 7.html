@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta content="text/html;charset=utf-8" http-equiv="Content-Type">
+<title>US State Populations Time Series Visualization </title>
+<script src="https://d3js.org/d3.v7.min.js"></script>
+</head>
+
+<body>
+    <script>
+
+        d3.csv("StatePopulation.csv").then(data =>{
+            const yrs = data.columns.slice(1)
+            const sts = data.map((d) => d.State);
+            data.forEach(d => {
+                d.y1960 = +d.y1960;
+                d.y1970 = +d.y1970;
+                d.y1980 = +d.y1980;
+                d.y1990 = +d.y1990;
+                d.y2000 = +d.y2000;
+                d.y2010 = +d.y2010;
+                d.y2020 = +d.y2020;
+            });
+            for (var i =0 ; i< data.length ; i++){
+                var state = data[i].State;
+            }
+                        
+            var m = {top: 55, right: 55, bottom: 55, left: 305};
+            width = 2000 - m.left - m.right;
+            height = 800 - m.top - m.bottom;
+
+            //create svg element
+            var svg = d3.select("body")
+            .append("svg")
+            .attr("width",width + m.left + m.right)
+            .attr("height",height + m.top + m.bottom)
+            .append("g")
+            .attr("transform", "translate(" + m.left + "," + m.top + ")")
+            //create x scale
+            var x = d3.scaleTime()
+                    .domain([new Date("1960-01-01"), new Date("2021-01-01")])
+                    .range([0,width]);
+
+            //create y scale
+            var y = d3.scaleLinear()
+                    .domain([0 , d3.max(data, function(d){return d.y2020}) + 1000])
+                    .range([height,0]);
+
+            //Path element adding for each state's data.
+            data.forEach(function(d){
+                var PathOfState = "";
+                var state = "";
+                for (var year in d){
+                    if(year.startsWith("y")){
+                        var population = d[year];
+                        var YearOfCensus = parseInt(year.substring(1,5));
+                        var x_coordinates = x(new Date(YearOfCensus,0,1));
+                        var y_coordinates = y(population);
+                        if (PathOfState === ""){
+                            PathOfState += "M " + x_coordinates + " " + y_coordinates;
+                        } else{
+                            PathOfState += "L " + x_coordinates + " " + y_coordinates;
+                        }
+                        var crcls = svg.append("circle")
+                        .attr("cx",x_coordinates)
+                        .attr("cy",y_coordinates)
+                        .attr("r",6)
+                        .attr("fill","steelblue");
+
+
+                        crcls.on("click",function(){
+                            var cx = d3.select(this).attr("cx");
+                            var cy = d3.select(this).attr("cy");
+                            var year_i = x.invert(cx).getFullYear();
+                            var pop_i = Math.floor(y.invert(cy));
+                            data.forEach(function(d) {
+                                if (d.y1960 === pop_i || d.y1970 === pop_i || d.y1980 === pop_i || d.y1990 === pop_i || d.y2000 === pop_i || d.y2010 === pop_i || d.y2020 === pop_i){
+                                    state = d.State;
+                                    return true;
+                                }
+                            });
+                            textarea.node().value = state + "-" + pop_i;
+                        
+                        });
+                    }
+                }
+                var line = svg.append("path")
+                .attr("d",PathOfState)
+                .attr("stroke","grey")
+                .attr("fill","none");               
+            });
+
+            // add the x axis
+            svg.append("g")
+            .attr("transform", "translate(0," + height + ")")
+            .call(d3.axisBottom(x)
+            .ticks(d3.timeYear.every(10))
+            .tickFormat(d3.timeFormat("%Y")));
+
+            //add the y axis
+            svg.append("g")
+            .call(d3.axisLeft(y));
+
+            // Create a text area
+            var textarea = d3.select("body")
+                            .append("textarea")
+                            .attr("rows", 2)
+                            .attr("cols", 50);
+
+            //Text for X Axis
+            svg.append("text")
+                .attr("text-anchor", "middle")
+                .attr("x", 1500)
+                .attr("y", 730)
+                .text("Year of Census");
+
+
+            //Text for Y Axis
+            svg.append("text")
+                .attr("text-anchor", "middle")
+                .attr("x", -50)
+                .attr("y", -80)
+                .attr("transform", "rotate(-90)")
+                .text("Populations of States");
+
+        });
+ </script>
+
+ </body>
+ </html>
